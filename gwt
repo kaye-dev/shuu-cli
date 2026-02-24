@@ -732,9 +732,40 @@ ${BOLD}${MSG_HELP_NOTES}:${NC}
 HELP
 }
 
+# ── banner ───────────────────────────────────────────────────────────
+
+_show_banner() {
+    local model
+    model="$(_get_model)"
+    if [[ -z "$model" ]]; then
+        model="$MSG_MODEL_NONE"
+    fi
+
+    local repo_info="-"
+    local branch_info="-"
+    local wt_count="-"
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        repo_info="$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo '-')"
+        branch_info="$(git branch --show-current 2>/dev/null || echo '-')"
+        wt_count="$(git worktree list 2>/dev/null | wc -l | tr -d ' ')"
+    fi
+
+    printf "\n" >&2
+    printf "  ${DIM}──${NC} ${YELLOW}${BOLD}gwt${NC} ${DIM}v${VERSION} ────────────────────────────────────${NC}\n" >&2
+    printf "\n" >&2
+    printf "  ${GREEN}      /\\\\${NC}           ${BOLD}Git Worktree Manager${NC}\n" >&2
+    printf "  ${GREEN}     /  \\\\${NC}\n" >&2
+    printf "  ${GREEN}    /    \\\\${NC}         ${DIM}Model  ${NC} %s\n" "$model" >&2
+    printf "  ${GREEN}   /______\\\\${NC}        ${DIM}Repo   ${NC} %s ${DIM}(%s)${NC}\n" "$repo_info" "$branch_info" >&2
+    printf "  ${GREEN}      ||${NC}           ${DIM}Trees  ${NC} %s\n" "$wt_count" >&2
+    printf "\n" >&2
+    printf "  ${DIM}──────────────────────────────────────────────${NC}\n" >&2
+}
+
 # ── interactive ──────────────────────────────────────────────────────
 
 cmd_interactive() {
+    _show_banner
     local items=(
         "$MSG_MENU_CREATE"
         "$MSG_MENU_LIST"

@@ -10,7 +10,20 @@ Interactive Git worktree manager with AI-powered branch name suggestions via [Cl
 curl -fsSL https://raw.githubusercontent.com/kaye-dev/shuu-cli/main/install.sh | bash
 ```
 
-Or build from source:
+### Docker
+
+```bash
+git clone https://github.com/kaye-dev/shuu-cli.git && cd shuu-cli
+docker build -t shuu .
+```
+
+Add to `~/.zshrc`:
+
+```bash
+alias shuu='docker run -it --rm -v "$(pwd):/repo" -v "$HOME/.config/shuu:/root/.config/shuu" -w /repo shuu'
+```
+
+### Build from source
 
 ```bash
 git clone https://github.com/kaye-dev/shuu-cli.git && cd shuu-cli

@@ -10,7 +10,20 @@ Git worktree をインタラクティブに管理する CLI ツール。[Claude 
 curl -fsSL https://raw.githubusercontent.com/kaye-dev/shuu-cli/main/install.sh | bash
 ```
 
-ソースからビルドする場合:
+### Docker
+
+```bash
+git clone https://github.com/kaye-dev/shuu-cli.git && cd shuu-cli
+docker build -t shuu .
+```
+
+`~/.zshrc` に追加:
+
+```bash
+alias shuu='docker run -it --rm -v "$(pwd):/repo" -v "$HOME/.config/shuu:/root/.config/shuu" -w /repo shuu'
+```
+
+### ソースからビルド
 
 ```bash
 git clone https://github.com/kaye-dev/shuu-cli.git && cd shuu-cli

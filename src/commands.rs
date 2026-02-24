@@ -2,7 +2,7 @@ use crate::i18n;
 use crate::menu::select_menu;
 use crate::{ai, banner, config, git};
 use crate::{err, info, success, App};
-use crate::{BOLD, BLUE, CYAN, DIM, GREEN, NC, RED, VERSION, YELLOW};
+use crate::{BLUE, BOLD, CYAN, DIM, GREEN, NC, RED, VERSION, YELLOW};
 use std::io::{self, Write};
 
 fn read_line_prompt(prompt: &str) -> String {
@@ -354,44 +354,20 @@ pub fn cmd_help(app: &App) {
     eprintln!();
     eprintln!("{BOLD}{}:{NC}", m.help_usage);
     eprintln!("    shuu <command>");
-    eprintln!(
-        "    shuu \"<description>\"       {}",
-        m.help_direct_desc
-    );
+    eprintln!("    shuu \"<description>\"       {}", m.help_direct_desc);
     eprintln!();
     eprintln!("{BOLD}{}:{NC}", m.help_commands);
-    eprintln!(
-        "    {GREEN}create{NC}  (c)      {}",
-        m.help_create_desc
-    );
-    eprintln!(
-        "    {GREEN}list{NC}    (l, ls)  {}",
-        m.help_list_desc
-    );
-    eprintln!(
-        "    {GREEN}remove{NC}  (rm)     {}",
-        m.help_remove_desc
-    );
-    eprintln!(
-        "    {GREEN}switch{NC}  (s)      {}",
-        m.help_switch_desc
-    );
-    eprintln!(
-        "    {GREEN}settings{NC}         {}",
-        m.help_settings_desc
-    );
-    eprintln!(
-        "    {GREEN}help{NC}    (-h)     {}",
-        m.help_help_desc
-    );
+    eprintln!("    {GREEN}create{NC}  (c)      {}", m.help_create_desc);
+    eprintln!("    {GREEN}list{NC}    (l, ls)  {}", m.help_list_desc);
+    eprintln!("    {GREEN}remove{NC}  (rm)     {}", m.help_remove_desc);
+    eprintln!("    {GREEN}switch{NC}  (s)      {}", m.help_switch_desc);
+    eprintln!("    {GREEN}settings{NC}         {}", m.help_settings_desc);
+    eprintln!("    {GREEN}help{NC}    (-h)     {}", m.help_help_desc);
     eprintln!();
     eprintln!("{BOLD}{}:{NC}", m.help_examples);
     eprintln!("    shuu                      # {}", m.menu_title);
     eprintln!("    shuu create               # {}", m.help_create_desc);
-    eprintln!(
-        "    shuu \"implement auth\"     # {}",
-        m.help_direct_desc
-    );
+    eprintln!("    shuu \"implement auth\"     # {}", m.help_direct_desc);
     eprintln!("    shuu ls                   # {}", m.help_list_desc);
     eprintln!("    shuu s                    # {}", m.help_switch_desc);
     eprintln!("    shuu rm                   # {}", m.help_remove_desc);

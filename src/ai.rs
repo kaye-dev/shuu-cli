@@ -2,9 +2,7 @@ use std::process::{Command, Stdio};
 
 fn claude_available() -> bool {
     std::env::var_os("PATH")
-        .map(|path| {
-            std::env::split_paths(&path).any(|dir| dir.join("claude").exists())
-        })
+        .map(|path| std::env::split_paths(&path).any(|dir| dir.join("claude").exists()))
         .unwrap_or(false)
 }
 
@@ -80,4 +78,68 @@ pub fn generate_branch_name(
     }
 
     fallback_branch_name(description)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_build_prompt_without_feedback() {
+        let prompt = build_prompt("add login feature", "");
+        assert!(prompt.contains("add login feature"));
+        assert!(!prompt.contains("Feedback"));
+    }
+
+    #[test]
+    fn test_build_prompt_with_feedback() {
+        let prompt = build_prompt("add login feature", "use oauth instead");
+        assert!(prompt.contains("add login feature"));
+        assert!(prompt.contains("Feedback on previous suggestion: use oauth instead"));
+    }
+
+    #[test]
+    fn test_build_prompt_contains_rules() {
+        let prompt = build_prompt("anything", "");
+        assert!(prompt.contains("kebab-case"));
+        assert!(prompt.contains("feat/, fix/, refactor/"));
+    }
+
+    #[test]
+    fn test_fallback_branch_name_simple() {
+        assert_eq!(fallback_branch_name("add login"), "feat/add-login");
+    }
+
+    #[test]
+    fn test_fallback_branch_name_uppercase() {
+        assert_eq!(
+            fallback_branch_name("Add Login Feature"),
+            "feat/add-login-feature"
+        );
+    }
+
+    #[test]
+    fn test_fallback_branch_name_special_chars() {
+        // `:` and `'` and `!` become `-`, then `--` is collapsed to `-`
+        assert_eq!(
+            fallback_branch_name("fix: user's email bug!"),
+            "feat/fix-user-s-email-bug"
+        );
+    }
+
+    #[test]
+    fn test_fallback_branch_name_long_description() {
+        let long_desc =
+            "this is a very long description that should be truncated at forty characters exactly";
+        let result = fallback_branch_name(long_desc);
+        // "feat/" prefix + at most 40 chars
+        assert!(result.len() <= 45);
+        assert!(result.starts_with("feat/"));
+    }
+
+    #[test]
+    fn test_fallback_branch_name_leading_trailing_special() {
+        // Leading/trailing spaces become `-`, then trim_matches('-') removes them
+        assert_eq!(fallback_branch_name("  hello world  "), "feat/hello-world");
+    }
 }

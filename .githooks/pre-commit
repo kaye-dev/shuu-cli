@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -e
+
+export PATH="$HOME/.cargo/bin:$PATH"
+
+echo "==> cargo fmt --check"
+cargo fmt --check
+
+echo "==> cargo clippy"
+cargo clippy -- -D warnings
+
+echo "==> cargo test"
+cargo test
+
+echo "pre-commit checks passed."

@@ -1,78 +1,131 @@
 # gwt - Git Worktree Manager
 
-> v1.0.0
+> v2.0.0
 
-Git worktree の作成・切り替え・削除を対話的に行う CLI ツールです。
-ブランチ名の提案に [Claude Code](https://github.com/anthropics/claude-code) を活用できます。
+A CLI tool for interactively creating, switching, and removing git worktrees.
+Uses [Claude Code](https://github.com/anthropics/claude-code) for AI-powered branch name suggestions.
 
-## 要件
+## Features
+
+- **Arrow-key navigation** - Interactive menus with `↑↓`, `j/k` (vim), number keys, and `q` to cancel
+- **AI branch naming** - Describe what you want to implement, get a branch name suggested by Claude
+- **Direct create mode** - `gwt "implement auth"` skips the prompt and goes straight to branch selection
+- **Multilingual** - 7 languages: English, Japanese, French, Spanish, Russian, Chinese, Arabic
+
+## Requirements
 
 - Bash 3.2+
 - Git
-- [Claude Code](https://github.com/anthropics/claude-code)（オプション、ブランチ名の AI 提案に使用）
+- [Claude Code](https://github.com/anthropics/claude-code) (optional, for AI branch name suggestions)
 
-## インストール
+## Installation
 
 ```bash
-# 1. スクリプトを PATH の通った場所にコピー
+# 1. Copy the script to somewhere in your PATH
 cp gwt /usr/local/bin/gwt
 chmod +x /usr/local/bin/gwt
 
-# 2. シェルラッパーを .zshrc に追加（gwt switch での cd に必要）
+# 2. Copy the locale directory alongside the script
+cp -r locale /usr/local/bin/locale
+
+# 3. Add the shell wrapper to your .zshrc (required for gwt switch to cd)
 echo 'source /path/to/gwt.zsh' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-> **Note:** `gwt switch` はサブプロセスからの `cd` をシェル関数で実現しています。`gwt.zsh` を source しないと、switch 後にディレクトリが移動しません。
+> **Note:** `gwt switch` uses a shell function to `cd` into the selected worktree. Without sourcing `gwt.zsh`, the directory change won't take effect in your current shell.
 
-## コマンド
+## Commands
 
-| コマンド | 短縮 | 説明 |
-|----------|------|------|
-| `gwt create` | `c` | worktree を作成（AI ブランチ名提案付き） |
-| `gwt list` | `l`, `ls` | worktree 一覧を表示 |
-| `gwt switch` | `s` | worktree へ移動（対話式選択） |
-| `gwt remove` | `rm` | worktree を削除（対話式選択） |
-| `gwt help` | `-h` | ヘルプを表示 |
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `gwt create` | `c` | Create worktree (AI branch name suggestion) |
+| `gwt list` | `l`, `ls` | List worktrees |
+| `gwt switch` | `s` | Switch to worktree (interactive) |
+| `gwt remove` | `rm` | Remove worktree (interactive) |
+| `gwt help` | `-h` | Show help |
 
-引数なしで `gwt` を実行するとインタラクティブメニューが表示されます。
+Running `gwt` with no arguments opens the interactive menu.
 
-## 使い方
+## Usage
 
 ```bash
-# インタラクティブメニューを起動
+# Interactive menu (arrow keys to navigate)
 gwt
 
-# 新しい worktree を作成
+# Create a new worktree
 gwt create
 
-# 一覧を確認
+# Create directly from a description (skips the prompt)
+gwt "implement user authentication"
+
+# List all worktrees
 gwt ls
 
-# 別の worktree に移動
+# Switch to another worktree
 gwt s
 
-# 不要な worktree を削除
+# Remove a worktree
 gwt rm
 ```
 
-### create の流れ
+### Keyboard shortcuts
 
-1. 実装内容の説明を入力
-2. ブランチ名が提案される（Claude Code がある場合は AI 提案、なければ自動生成）
-3. ブランチ名を確認・修正して Enter
-4. worktree が作成される
+All interactive menus support:
 
-## 仕組み
+| Key | Action |
+|-----|--------|
+| `↑` / `k` | Move up |
+| `↓` / `j` | Move down |
+| `1`-`9` | Jump to item |
+| `Enter` | Confirm selection |
+| `q` | Cancel |
 
-worktree は `../<リポジトリ名>-worktrees/<ブランチ名>/` に作成されます。
+### Create workflow
+
+1. Enter a description of what you want to implement (or pass it as an argument)
+2. A branch name is suggested (AI-powered if Claude Code is installed, otherwise auto-generated)
+3. Select the suggested name, enter your own, or regenerate with feedback
+4. The worktree is created
+
+## Language / Locale
+
+gwt defaults to English. Set `GWT_LANG` or use your system `LANG` to switch languages:
+
+```bash
+# Use Japanese
+GWT_LANG=ja gwt
+
+# Or set it in your shell profile
+export GWT_LANG=ja
+```
+
+### Supported languages
+
+| Code | Language |
+|------|----------|
+| `en` | English (default) |
+| `ja` | 日本語 |
+| `fr` | Français |
+| `es` | Español |
+| `ru` | Русский |
+| `zh` | 中文 |
+| `ar` | العربية |
+
+## How it works
+
+Worktrees are created at `../<repo-name>-worktrees/<branch>/`:
 
 ```
 parent/
-├── my-project/              # メインの worktree
+├── my-project/              # Main worktree
 └── my-project-worktrees/
-    ├── feat-add-auth/        # gwt create で作成
-    └── fix-login-bug/        # gwt create で作成
+    ├── feat-add-auth/       # Created by gwt
+    └── fix-login-bug/       # Created by gwt
 ```
 
-`gwt create` 実行時に Claude Code がインストールされていれば、実装内容の説明からブランチ名を自動提案します（`feat/`, `fix/`, `refactor/` 等のプレフィックス付き kebab-case）。インストールされていない場合は説明文から `feat/` プレフィックス付きで自動生成します。
+When Claude Code is installed, `gwt create` sends your implementation description to Claude to suggest a branch name (kebab-case with `feat/`, `fix/`, `refactor/` prefixes). Without Claude Code, it auto-generates from the description text.
+
+## License
+
+[MIT](LICENSE)

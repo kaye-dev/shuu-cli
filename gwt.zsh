@@ -1,6 +1,6 @@
 # gwt - Git Worktree Manager shell wrapper
 # Source this file in your .zshrc:
-#   source ~/git-worktree/gwt.zsh
+#   source ~/shuu-cli/gwt.zsh
 
 gwt() {
     rm -f /tmp/.gwt_cd_target

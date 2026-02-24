@@ -1,0 +1,436 @@
+#!/usr/bin/env bash
+# gwt - Git Worktree Manager
+# bash 3.2 compatible
+
+set -euo pipefail
+
+VERSION="1.0.0"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m' # No Color
+
+# ── Helpers ──────────────────────────────────────────────────────────
+
+err() { printf "${RED}error:${NC} %s\n" "$1" >&2; }
+info() { printf "${CYAN}▸${NC} %s\n" "$1"; }
+success() { printf "${GREEN}✓${NC} %s\n" "$1"; }
+
+require_git_repo() {
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        err "gitリポジトリ内で実行してください"
+        exit 1
+    fi
+}
+
+# Get the main worktree directory (works from any worktree)
+get_main_worktree() {
+    git worktree list | head -1 | awk '{print $1}'
+}
+
+# Get worktrees directory (sibling of main worktree)
+get_worktrees_dir() {
+    local main_wt
+    main_wt="$(get_main_worktree)"
+    local repo_name
+    repo_name="$(basename "$main_wt")"
+    local parent
+    parent="$(dirname "$main_wt")"
+    printf '%s' "${parent}/${repo_name}-worktrees"
+}
+
+# Generate a branch name from description (and optional feedback)
+# Usage: generate_branch_name "description" ["feedback"]
+generate_branch_name() {
+    local description="$1"
+    local feedback="${2:-}"
+    local name=""
+
+    if command -v claude >/dev/null 2>&1; then
+        info "ブランチ名を生成中..."
+        local prompt="以下の実装内容に最適なgitブランチ名を1つだけ提案してください。
+ルール:
+- kebab-case
+- 英語
+- 短く簡潔に（2-4語）
+- feat/, fix/, refactor/ などのプレフィックスを付ける
+- ブランチ名のみを出力（説明不要）
+
+実装内容: ${description}"
+
+        if [[ -n "$feedback" ]]; then
+            prompt="${prompt}
+
+前回の提案への修正リクエスト: ${feedback}"
+        fi
+
+        name="$(CLAUDECODE= claude -p "$prompt" 2>/dev/null || true)"
+        name="$(echo "$name" | head -1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    fi
+
+    # Fallback
+    if [[ -z "$name" ]]; then
+        name="feat/$(echo "$description" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9/-]//g' | cut -c1-40)"
+    fi
+
+    printf '%s' "$name"
+}
+
+# ── create ───────────────────────────────────────────────────────────
+
+cmd_create() {
+    require_git_repo
+
+    local worktrees_dir
+    worktrees_dir="$(get_worktrees_dir)"
+
+    # Ask what to implement
+    printf "${BOLD}何を実装しますか？${NC} "
+    read -r description
+    if [[ -z "$description" ]]; then
+        err "説明を入力してください"
+        exit 1
+    fi
+
+    # Generate branch name
+    local suggested_name=""
+    suggested_name="$(generate_branch_name "$description")"
+
+    # Let user choose
+    local branch_name=""
+    while [[ -z "$branch_name" ]]; do
+        printf "\n"
+        printf "  ${YELLOW}1.${NC} ${GREEN}%s${NC}\n" "$suggested_name"
+        printf "  ${YELLOW}2.${NC} 自分で入力する\n"
+        printf "  ${YELLOW}3.${NC} フィードバックして再生成\n"
+        printf "\n${BOLD}> ${NC}"
+        read -r choice
+
+        case "$choice" in
+            1)
+                branch_name="$suggested_name"
+                ;;
+            2)
+                printf "${BOLD}ブランチ名:${NC} "
+                read -r user_name
+                if [[ -n "$user_name" ]]; then
+                    branch_name="$user_name"
+                else
+                    err "ブランチ名を入力してください"
+                fi
+                ;;
+            3)
+                printf "${BOLD}フィードバック:${NC} "
+                read -r feedback
+                if [[ -n "$feedback" ]]; then
+                    suggested_name="$(generate_branch_name "$description" "$feedback")"
+                else
+                    err "フィードバックを入力してください"
+                fi
+                ;;
+            *)
+                err "無効な選択です"
+                ;;
+        esac
+    done
+
+    # Derive worktree directory name from branch (replace / with -)
+    local wt_dirname
+    wt_dirname="$(echo "$branch_name" | tr '/' '-')"
+    local wt_path="${worktrees_dir}/${wt_dirname}"
+
+    # Check if already exists
+    if [[ -d "$wt_path" ]]; then
+        err "worktreeが既に存在します: ${wt_path}"
+        exit 1
+    fi
+
+    # Create worktrees directory if needed
+    mkdir -p "$worktrees_dir"
+
+    # Create worktree with new branch
+    info "worktreeを作成中..."
+    if git worktree add -b "$branch_name" "$wt_path" 2>/dev/null; then
+        success "worktreeを作成しました"
+    elif git worktree add "$wt_path" "$branch_name" 2>/dev/null; then
+        success "既存ブランチでworktreeを作成しました"
+    else
+        # Branch might already exist, try without -b
+        err "worktreeの作成に失敗しました"
+        exit 1
+    fi
+
+    printf "\n"
+    printf "  ${DIM}パス:${NC}     %s\n" "$wt_path"
+    printf "  ${DIM}ブランチ:${NC} %s\n" "$branch_name"
+    printf "\n"
+    info "移動するには: ${BOLD}gwt switch${NC}"
+}
+
+# ── list ─────────────────────────────────────────────────────────────
+
+cmd_list() {
+    require_git_repo
+
+    local main_wt
+    main_wt="$(get_main_worktree)"
+
+    printf "\n${BOLD}Git Worktrees${NC}\n\n"
+
+    local index=0
+    while IFS= read -r line; do
+        local wt_path wt_hash wt_branch
+        wt_path="$(echo "$line" | awk '{print $1}')"
+        wt_hash="$(echo "$line" | awk '{print $2}')"
+        wt_branch="$(echo "$line" | awk '{print $3}' | tr -d '[]')"
+
+        if [[ "$wt_path" == "$main_wt" ]]; then
+            printf "  ${YELLOW}★${NC} ${BOLD}%-50s${NC} ${DIM}%s${NC}  ${GREEN}%s${NC}\n" \
+                "$wt_path" "$wt_hash" "$wt_branch"
+        else
+            printf "    %-50s ${DIM}%s${NC}  ${BLUE}%s${NC}\n" \
+                "$wt_path" "$wt_hash" "$wt_branch"
+        fi
+        index=$((index + 1))
+    done < <(git worktree list)
+
+    printf "\n"
+}
+
+# ── remove ───────────────────────────────────────────────────────────
+
+cmd_remove() {
+    require_git_repo
+
+    local main_wt
+    main_wt="$(get_main_worktree)"
+
+    # Build list of removable worktrees (exclude main)
+    local wt_paths=()
+    local wt_branches=()
+    while IFS= read -r line; do
+        local wt_path wt_branch
+        wt_path="$(echo "$line" | awk '{print $1}')"
+        wt_branch="$(echo "$line" | awk '{print $3}' | tr -d '[]')"
+
+        if [[ "$wt_path" != "$main_wt" ]]; then
+            wt_paths+=("$wt_path")
+            wt_branches+=("$wt_branch")
+        fi
+    done < <(git worktree list)
+
+    if [[ ${#wt_paths[@]} -eq 0 ]]; then
+        info "削除可能なworktreeがありません"
+        return 0
+    fi
+
+    # Display numbered list
+    printf "\n${BOLD}削除するworktreeを選択:${NC}\n\n"
+    local i=0
+    while [[ $i -lt ${#wt_paths[@]} ]]; do
+        printf "  ${YELLOW}%d)${NC} %-50s ${BLUE}%s${NC}\n" \
+            $((i + 1)) "${wt_paths[$i]}" "${wt_branches[$i]}"
+        i=$((i + 1))
+    done
+    printf "\n"
+
+    printf "${BOLD}番号を入力 [1-${#wt_paths[@]}]:${NC} "
+    read -r selection
+
+    # Validate selection
+    if ! [[ "$selection" =~ ^[0-9]+$ ]] || [[ "$selection" -lt 1 ]] || [[ "$selection" -gt ${#wt_paths[@]} ]]; then
+        err "無効な選択です"
+        exit 1
+    fi
+
+    local idx=$((selection - 1))
+    local target_path="${wt_paths[$idx]}"
+    local target_branch="${wt_branches[$idx]}"
+
+    # Confirm
+    printf "${RED}${BOLD}本当に削除しますか？${NC}\n"
+    printf "  パス:     %s\n" "$target_path"
+    printf "  ブランチ: %s\n" "$target_branch"
+    printf "${BOLD}[y/N]:${NC} "
+    read -r confirm
+
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+        info "キャンセルしました"
+        return 0
+    fi
+
+    # Remove worktree
+    if git worktree remove "$target_path" 2>/dev/null; then
+        success "worktreeを削除しました: ${target_path}"
+    else
+        err "worktreeの削除に失敗しました"
+        printf "${BOLD}--force で強制削除しますか？ [y/N]:${NC} "
+        read -r force_confirm
+        if [[ "$force_confirm" == "y" || "$force_confirm" == "Y" ]]; then
+            if git worktree remove --force "$target_path"; then
+                success "worktreeを強制削除しました"
+            else
+                err "強制削除も失敗しました"
+                exit 1
+            fi
+        else
+            exit 1
+        fi
+    fi
+
+    # Ask about branch deletion
+    printf "${BOLD}ブランチ '${target_branch}' も削除しますか？ [y/N]:${NC} "
+    read -r delete_branch
+    if [[ "$delete_branch" == "y" || "$delete_branch" == "Y" ]]; then
+        if git branch -d "$target_branch" 2>/dev/null; then
+            success "ブランチを削除しました: ${target_branch}"
+        else
+            printf "${BOLD}未マージのブランチです。強制削除しますか？ [y/N]:${NC} "
+            read -r force_branch
+            if [[ "$force_branch" == "y" || "$force_branch" == "Y" ]]; then
+                git branch -D "$target_branch"
+                success "ブランチを強制削除しました: ${target_branch}"
+            fi
+        fi
+    fi
+}
+
+# ── switch ───────────────────────────────────────────────────────────
+
+cmd_switch() {
+    require_git_repo
+
+    # Build list of all worktrees
+    local wt_paths=()
+    local wt_branches=()
+    while IFS= read -r line; do
+        local wt_path wt_branch
+        wt_path="$(echo "$line" | awk '{print $1}')"
+        wt_branch="$(echo "$line" | awk '{print $3}' | tr -d '[]')"
+        wt_paths+=("$wt_path")
+        wt_branches+=("$wt_branch")
+    done < <(git worktree list)
+
+    if [[ ${#wt_paths[@]} -le 1 ]]; then
+        info "切り替え可能なworktreeがありません"
+        return 0
+    fi
+
+    # Display numbered list
+    local current_dir
+    current_dir="$(pwd -P)"
+    printf "\n${BOLD}移動先のworktreeを選択:${NC}\n\n"
+    local i=0
+    while [[ $i -lt ${#wt_paths[@]} ]]; do
+        local marker="  "
+        if [[ "$current_dir" == "${wt_paths[$i]}"* ]]; then
+            marker="${GREEN}▶${NC} "
+        fi
+        printf "  ${marker}${YELLOW}%d)${NC} %-50s ${BLUE}%s${NC}\n" \
+            $((i + 1)) "${wt_paths[$i]}" "${wt_branches[$i]}"
+        i=$((i + 1))
+    done
+    printf "\n"
+
+    printf "${BOLD}番号を入力 [1-${#wt_paths[@]}]:${NC} "
+    read -r selection
+
+    # Validate selection
+    if ! [[ "$selection" =~ ^[0-9]+$ ]] || [[ "$selection" -lt 1 ]] || [[ "$selection" -gt ${#wt_paths[@]} ]]; then
+        err "無効な選択です"
+        exit 1
+    fi
+
+    local idx=$((selection - 1))
+    local target_path="${wt_paths[$idx]}"
+
+    success "${wt_branches[$idx]} に移動します"
+    # Write target path to temp file for shell wrapper to cd
+    printf "%s" "$target_path" > "/tmp/.gwt_cd_target"
+}
+
+# ── help ─────────────────────────────────────────────────────────────
+
+cmd_help() {
+    cat <<HELP
+
+${BOLD}gwt${NC} - Git Worktree Manager v${VERSION}
+
+${BOLD}USAGE:${NC}
+    gwt <command>
+
+${BOLD}COMMANDS:${NC}
+    ${GREEN}create${NC}  (c)      worktree作成（AI名前提案付き）
+    ${GREEN}list${NC}    (l, ls)  worktree一覧表示
+    ${GREEN}remove${NC}  (rm)     worktree削除（対話式選択）
+    ${GREEN}switch${NC}  (s)      worktreeへ移動
+    ${GREEN}help${NC}    (-h)     このヘルプを表示
+
+${BOLD}EXAMPLES:${NC}
+    gwt create       # 新しいworktreeを作成
+    gwt ls           # worktree一覧を表示
+    gwt s            # worktreeへ移動
+    gwt rm           # worktreeを削除
+
+${BOLD}NOTES:${NC}
+    worktreeは ../<repo>-worktrees/<branch> に作成されます。
+    'gwt switch' による cd は gwt.zsh のシェル関数が必要です。
+
+HELP
+}
+
+# ── Main ─────────────────────────────────────────────────────────────
+
+cmd_interactive() {
+    printf "\n${BOLD}gwt${NC} - Git Worktree Manager\n\n"
+    printf "  ${YELLOW}1.${NC} create\n"
+    printf "  ${YELLOW}2.${NC} list\n"
+    printf "  ${YELLOW}3.${NC} remove\n"
+    printf "  ${YELLOW}4.${NC} switch\n"
+    printf "  ${YELLOW}5.${NC} help\n"
+    printf "\n${BOLD}> ${NC}"
+    read -r selection
+
+    case "$selection" in
+        1|create|c)  cmd_create ;;
+        2|list|l|ls) cmd_list ;;
+        3|remove|rm) cmd_remove ;;
+        4|switch|s)  cmd_switch ;;
+        5|help)      cmd_help ;;
+        *)
+            err "無効な選択です"
+            exit 1
+            ;;
+    esac
+}
+
+main() {
+    local cmd="${1:-}"
+    shift 2>/dev/null || true
+
+    if [[ -z "$cmd" ]]; then
+        cmd_interactive
+        return
+    fi
+
+    case "$cmd" in
+        create|c)    cmd_create "$@" ;;
+        list|l|ls)   cmd_list "$@" ;;
+        remove|rm)   cmd_remove "$@" ;;
+        switch|s)    cmd_switch "$@" ;;
+        help|-h|--help) cmd_help ;;
+        *)
+            err "不明なコマンド: ${cmd}"
+            cmd_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

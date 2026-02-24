@@ -1,4 +1,4 @@
-# gwt - Russian (Русский)
+# shuu - Russian (Русский)
 
 MSG_NOT_GIT_REPO="Запустите внутри git-репозитория"
 MSG_GENERATING_BRANCH="Генерация имени ветки..."
@@ -36,7 +36,7 @@ MSG_BRANCH_FORCE_DELETED="Ветка принудительно удалена"
 MSG_NO_WT_TO_SWITCH="Нет worktree для переключения"
 MSG_SELECT_WT_SWITCH="Выберите worktree:"
 MSG_SWITCHING_TO="Переключение на %s"
-MSG_MENU_TITLE="gwt - Git Worktree Manager"
+MSG_MENU_TITLE="shuu - Git Worktree Manager"
 MSG_MENU_CREATE="create  - Создать worktree"
 MSG_MENU_LIST="list    - Список worktree"
 MSG_MENU_REMOVE="remove  - Удалить worktree"
@@ -53,7 +53,7 @@ MSG_HELP_REMOVE_DESC="Удалить worktree (интерактивно)"
 MSG_HELP_SWITCH_DESC="Переключиться на worktree"
 MSG_HELP_HELP_DESC="Показать эту справку"
 MSG_HELP_NOTE_PATH="Worktree создаются в ../<репо>-worktrees/<ветка>"
-MSG_HELP_NOTE_SWITCH="cd через 'gwt switch' требует подключения gwt.zsh"
+MSG_HELP_NOTE_SWITCH="cd через 'shuu switch' требует подключения shuu.zsh"
 MSG_HELP_DIRECT_DESC="Создать worktree напрямую из описания"
 MSG_SETTINGS_TITLE="Настройки"
 MSG_SETTINGS_LANG="Язык"

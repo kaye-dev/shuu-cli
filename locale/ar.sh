@@ -1,4 +1,4 @@
-# gwt - Arabic (العربية)
+# shuu - Arabic (العربية)
 
 MSG_NOT_GIT_REPO="يرجى التشغيل داخل مستودع git"
 MSG_GENERATING_BRANCH="جارٍ إنشاء اسم الفرع..."
@@ -36,7 +36,7 @@ MSG_BRANCH_FORCE_DELETED="تم حذف الفرع إجبارياً"
 MSG_NO_WT_TO_SWITCH="لا توجد worktrees للتبديل"
 MSG_SELECT_WT_SWITCH="اختر worktree:"
 MSG_SWITCHING_TO="جارٍ التبديل إلى %s"
-MSG_MENU_TITLE="gwt - مدير Git Worktree"
+MSG_MENU_TITLE="shuu - مدير Git Worktree"
 MSG_MENU_CREATE="create  - إنشاء worktree"
 MSG_MENU_LIST="list    - عرض قائمة worktrees"
 MSG_MENU_REMOVE="remove  - حذف worktree"
@@ -53,7 +53,7 @@ MSG_HELP_REMOVE_DESC="حذف worktree (تفاعلي)"
 MSG_HELP_SWITCH_DESC="التبديل إلى worktree"
 MSG_HELP_HELP_DESC="عرض هذه المساعدة"
 MSG_HELP_NOTE_PATH="يتم إنشاء worktrees في ../<المستودع>-worktrees/<الفرع>"
-MSG_HELP_NOTE_SWITCH="cd عبر 'gwt switch' يتطلب تحميل gwt.zsh"
+MSG_HELP_NOTE_SWITCH="cd عبر 'shuu switch' يتطلب تحميل shuu.zsh"
 MSG_HELP_DIRECT_DESC="إنشاء worktree مباشرة من الوصف"
 MSG_SETTINGS_TITLE="الإعدادات"
 MSG_SETTINGS_LANG="اللغة"

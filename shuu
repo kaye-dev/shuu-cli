@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gwt - Git Worktree Manager
+# shuu - Git Worktree Manager
 # Bash 3.2 compatible
 
 set -euo pipefail
@@ -55,7 +55,7 @@ MSG_BRANCH_FORCE_DELETED="Branch force deleted"
 MSG_NO_WT_TO_SWITCH="No worktrees to switch to"
 MSG_SELECT_WT_SWITCH="Select worktree:"
 MSG_SWITCHING_TO="Switching to %s"
-MSG_MENU_TITLE="gwt - Git Worktree Manager"
+MSG_MENU_TITLE="shuu - Git Worktree Manager"
 MSG_MENU_CREATE="create  - Create worktree"
 MSG_MENU_LIST="list    - List worktrees"
 MSG_MENU_REMOVE="remove  - Remove worktree"
@@ -72,7 +72,7 @@ MSG_HELP_REMOVE_DESC="Remove worktree (interactive)"
 MSG_HELP_SWITCH_DESC="Switch to worktree"
 MSG_HELP_HELP_DESC="Show this help"
 MSG_HELP_NOTE_PATH="Worktrees are created at ../<repo>-worktrees/<branch>"
-MSG_HELP_NOTE_SWITCH="'gwt switch' cd requires sourcing gwt.zsh"
+MSG_HELP_NOTE_SWITCH="'shuu switch' cd requires sourcing shuu.zsh"
 MSG_HELP_DIRECT_DESC="Create worktree directly from description"
 MSG_MODEL_CURRENT="Current model: %s"
 MSG_MODEL_SELECT="Select model:"
@@ -94,7 +94,7 @@ MSG_SETTINGS_RESET_DONE="Settings reset to defaults"
 
 # ── Config ───────────────────────────────────────────────────────────
 
-GWT_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gwt"
+GWT_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/shuu"
 
 # Load locale (priority: GWT_LANG env > config file > LANG env)
 _load_locale() {
@@ -218,8 +218,16 @@ select_menu() {
         local accept=0
         case "$key" in
             $'\x1b')
-                IFS= read -rsn2 seq
-                case "$seq" in
+                IFS= read -rsn1 -t 0.05 seq1 || seq1=""
+                if [[ -z "$seq1" ]]; then
+                    # ESC key alone - cancel
+                    printf '\n' >&2
+                    tput cnorm >&2 2>/dev/null || true
+                    trap - INT TERM
+                    return 1
+                fi
+                IFS= read -rsn1 -t 0.05 seq2 || seq2=""
+                case "${seq1}${seq2}" in
                     '[A') selected=$(( (selected - 1 + total) % total )) ;;
                     '[B') selected=$(( (selected + 1) % total )) ;;
                 esac
@@ -435,7 +443,7 @@ cmd_create() {
     printf "  ${DIM}%s${NC} %s\n" "$MSG_PATH" "$wt_path" >&2
     printf "  ${DIM}%s${NC} %s\n" "$MSG_BRANCH" "$branch_name" >&2
     printf "\n" >&2
-    printf "${CYAN}▸${NC} %s ${BOLD}gwt switch${NC}\n" "$MSG_TO_SWITCH" >&2
+    printf "${CYAN}▸${NC} %s ${BOLD}shuu switch${NC}\n" "$MSG_TO_SWITCH" >&2
 }
 
 # ── list ─────────────────────────────────────────────────────────────
@@ -596,7 +604,7 @@ cmd_switch() {
     local target_path="${wt_paths[$selected]}"
     success "$(printf "$MSG_SWITCHING_TO" "${wt_branches[$selected]}")"
     # Write target path to temp file for shell wrapper to cd
-    printf "%s" "$target_path" > "/tmp/.gwt_cd_target"
+    printf "%s" "$target_path" > "/tmp/.shuu_cd_target"
 }
 
 # ── settings ─────────────────────────────────────────────────────────
@@ -703,11 +711,11 @@ cmd_settings() {
 cmd_help() {
     cat >&2 <<HELP
 
-${BOLD}gwt${NC} - Git Worktree Manager v${VERSION}
+${BOLD}shuu${NC} - Git Worktree Manager v${VERSION}
 
 ${BOLD}${MSG_HELP_USAGE}:${NC}
-    gwt <command>
-    gwt "<description>"       ${MSG_HELP_DIRECT_DESC}
+    shuu <command>
+    shuu "<description>"       ${MSG_HELP_DIRECT_DESC}
 
 ${BOLD}${MSG_HELP_COMMANDS}:${NC}
     ${GREEN}create${NC}  (c)      ${MSG_HELP_CREATE_DESC}
@@ -718,12 +726,12 @@ ${BOLD}${MSG_HELP_COMMANDS}:${NC}
     ${GREEN}help${NC}    (-h)     ${MSG_HELP_HELP_DESC}
 
 ${BOLD}${MSG_HELP_EXAMPLES}:${NC}
-    gwt                      # ${MSG_MENU_TITLE}
-    gwt create               # ${MSG_HELP_CREATE_DESC}
-    gwt "implement auth"     # ${MSG_HELP_DIRECT_DESC}
-    gwt ls                   # ${MSG_HELP_LIST_DESC}
-    gwt s                    # ${MSG_HELP_SWITCH_DESC}
-    gwt rm                   # ${MSG_HELP_REMOVE_DESC}
+    shuu                      # ${MSG_MENU_TITLE}
+    shuu create               # ${MSG_HELP_CREATE_DESC}
+    shuu "implement auth"     # ${MSG_HELP_DIRECT_DESC}
+    shuu ls                   # ${MSG_HELP_LIST_DESC}
+    shuu s                    # ${MSG_HELP_SWITCH_DESC}
+    shuu rm                   # ${MSG_HELP_REMOVE_DESC}
 
 ${BOLD}${MSG_HELP_NOTES}:${NC}
     ${MSG_HELP_NOTE_PATH}
@@ -751,7 +759,7 @@ _show_banner() {
     fi
 
     printf "\n" >&2
-    printf "  ${DIM}──${NC} ${YELLOW}${BOLD}gwt${NC} ${DIM}v${VERSION} ────────────────────────────────────${NC}\n" >&2
+    printf "  ${DIM}──${NC} ${YELLOW}${BOLD}shuu${NC} ${DIM}v${VERSION} ────────────────────────────────────${NC}\n" >&2
     printf "\n" >&2
     printf "  ${GREEN}      /\\\\${NC}           ${BOLD}Git Worktree Manager${NC}\n" >&2
     printf "  ${GREEN}     /  \\\\${NC}\n" >&2

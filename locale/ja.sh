@@ -1,4 +1,4 @@
-# gwt - Japanese (日本語)
+# shuu - Japanese (日本語)
 
 MSG_NOT_GIT_REPO="gitリポジトリ内で実行してください"
 MSG_GENERATING_BRANCH="ブランチ名を生成中..."
@@ -36,7 +36,7 @@ MSG_BRANCH_FORCE_DELETED="ブランチを強制削除しました"
 MSG_NO_WT_TO_SWITCH="切り替え可能なworktreeがありません"
 MSG_SELECT_WT_SWITCH="worktreeを選択:"
 MSG_SWITCHING_TO="%s に移動します"
-MSG_MENU_TITLE="gwt - Git Worktree Manager"
+MSG_MENU_TITLE="shuu - Git Worktree Manager"
 MSG_MENU_CREATE="create  - worktreeを作成"
 MSG_MENU_LIST="list    - worktree一覧"
 MSG_MENU_REMOVE="remove  - worktreeを削除"
@@ -53,7 +53,7 @@ MSG_HELP_REMOVE_DESC="worktree削除（対話式選択）"
 MSG_HELP_SWITCH_DESC="worktreeへ移動"
 MSG_HELP_HELP_DESC="このヘルプを表示"
 MSG_HELP_NOTE_PATH="worktreeは ../<リポジトリ名>-worktrees/<ブランチ> に作成されます"
-MSG_HELP_NOTE_SWITCH="'gwt switch' による cd は gwt.zsh のsource が必要です"
+MSG_HELP_NOTE_SWITCH="'shuu switch' による cd は shuu.zsh のsource が必要です"
 MSG_HELP_DIRECT_DESC="説明文から直接worktreeを作成"
 MSG_SETTINGS_TITLE="設定"
 MSG_SETTINGS_LANG="言語"

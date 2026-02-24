@@ -1,4 +1,4 @@
-# gwt - French (Français)
+# shuu - French (Français)
 
 MSG_NOT_GIT_REPO="Veuillez exécuter dans un dépôt git"
 MSG_GENERATING_BRANCH="Génération du nom de branche..."
@@ -36,7 +36,7 @@ MSG_BRANCH_FORCE_DELETED="Branche supprimée de force"
 MSG_NO_WT_TO_SWITCH="Aucun worktree disponible"
 MSG_SELECT_WT_SWITCH="Sélectionner le worktree :"
 MSG_SWITCHING_TO="Basculement vers %s"
-MSG_MENU_TITLE="gwt - Git Worktree Manager"
+MSG_MENU_TITLE="shuu - Git Worktree Manager"
 MSG_MENU_CREATE="create  - Créer un worktree"
 MSG_MENU_LIST="list    - Lister les worktrees"
 MSG_MENU_REMOVE="remove  - Supprimer un worktree"
@@ -53,7 +53,7 @@ MSG_HELP_REMOVE_DESC="Supprimer un worktree (interactif)"
 MSG_HELP_SWITCH_DESC="Basculer vers un worktree"
 MSG_HELP_HELP_DESC="Afficher cette aide"
 MSG_HELP_NOTE_PATH="Les worktrees sont créés dans ../<dépôt>-worktrees/<branche>"
-MSG_HELP_NOTE_SWITCH="Le cd de 'gwt switch' nécessite le sourcing de gwt.zsh"
+MSG_HELP_NOTE_SWITCH="Le cd de 'shuu switch' nécessite le sourcing de shuu.zsh"
 MSG_HELP_DIRECT_DESC="Créer un worktree directement à partir d'une description"
 MSG_SETTINGS_TITLE="Paramètres"
 MSG_SETTINGS_LANG="Langue"

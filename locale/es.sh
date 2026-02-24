@@ -1,4 +1,4 @@
-# gwt - Spanish (Español)
+# shuu - Spanish (Español)
 
 MSG_NOT_GIT_REPO="Ejecute dentro de un repositorio git"
 MSG_GENERATING_BRANCH="Generando nombre de rama..."
@@ -36,7 +36,7 @@ MSG_BRANCH_FORCE_DELETED="Rama eliminada forzosamente"
 MSG_NO_WT_TO_SWITCH="No hay worktrees disponibles"
 MSG_SELECT_WT_SWITCH="Seleccionar worktree:"
 MSG_SWITCHING_TO="Cambiando a %s"
-MSG_MENU_TITLE="gwt - Git Worktree Manager"
+MSG_MENU_TITLE="shuu - Git Worktree Manager"
 MSG_MENU_CREATE="create  - Crear worktree"
 MSG_MENU_LIST="list    - Listar worktrees"
 MSG_MENU_REMOVE="remove  - Eliminar worktree"
@@ -53,7 +53,7 @@ MSG_HELP_REMOVE_DESC="Eliminar worktree (interactivo)"
 MSG_HELP_SWITCH_DESC="Cambiar a un worktree"
 MSG_HELP_HELP_DESC="Mostrar esta ayuda"
 MSG_HELP_NOTE_PATH="Los worktrees se crean en ../<repo>-worktrees/<rama>"
-MSG_HELP_NOTE_SWITCH="El cd de 'gwt switch' requiere cargar gwt.zsh"
+MSG_HELP_NOTE_SWITCH="El cd de 'shuu switch' requiere cargar shuu.zsh"
 MSG_HELP_DIRECT_DESC="Crear worktree directamente desde una descripción"
 MSG_SETTINGS_TITLE="Configuración"
 MSG_SETTINGS_LANG="Idioma"

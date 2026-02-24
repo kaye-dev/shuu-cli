@@ -1,4 +1,4 @@
-# gwt - Chinese (中文)
+# shuu - Chinese (中文)
 
 MSG_NOT_GIT_REPO="请在 git 仓库中运行"
 MSG_GENERATING_BRANCH="正在生成分支名..."
@@ -36,7 +36,7 @@ MSG_BRANCH_FORCE_DELETED="分支已强制删除"
 MSG_NO_WT_TO_SWITCH="没有可切换的 worktree"
 MSG_SELECT_WT_SWITCH="选择 worktree："
 MSG_SWITCHING_TO="正在切换到 %s"
-MSG_MENU_TITLE="gwt - Git Worktree 管理器"
+MSG_MENU_TITLE="shuu - Git Worktree 管理器"
 MSG_MENU_CREATE="create  - 创建 worktree"
 MSG_MENU_LIST="list    - 列出 worktree"
 MSG_MENU_REMOVE="remove  - 删除 worktree"
@@ -53,7 +53,7 @@ MSG_HELP_REMOVE_DESC="删除 worktree（交互式）"
 MSG_HELP_SWITCH_DESC="切换到 worktree"
 MSG_HELP_HELP_DESC="显示此帮助"
 MSG_HELP_NOTE_PATH="worktree 创建在 ../<仓库名>-worktrees/<分支>"
-MSG_HELP_NOTE_SWITCH="'gwt switch' 的 cd 需要 source gwt.zsh"
+MSG_HELP_NOTE_SWITCH="'shuu switch' 的 cd 需要 source shuu.zsh"
 MSG_HELP_DIRECT_DESC="从描述直接创建 worktree"
 MSG_SETTINGS_TITLE="设置"
 MSG_SETTINGS_LANG="语言"

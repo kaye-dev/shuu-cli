@@ -74,10 +74,37 @@ MSG_HELP_HELP_DESC="Show this help"
 MSG_HELP_NOTE_PATH="Worktrees are created at ../<repo>-worktrees/<branch>"
 MSG_HELP_NOTE_SWITCH="'gwt switch' cd requires sourcing gwt.zsh"
 MSG_HELP_DIRECT_DESC="Create worktree directly from description"
+MSG_MODEL_CURRENT="Current model: %s"
+MSG_MODEL_SELECT="Select model:"
+MSG_MODEL_SET="Model set to %s"
+MSG_MODEL_NONE="(default)"
+MSG_SETTINGS_TITLE="Settings"
+MSG_SETTINGS_LANG="Language"
+MSG_SETTINGS_MODEL="AI Model"
+MSG_MENU_SETTINGS="settings - Settings"
+MSG_HELP_SETTINGS_DESC="Configure language and AI model"
+MSG_MODEL_CURRENT="Current model: %s"
+MSG_MODEL_SELECT="Select model:"
+MSG_MODEL_SET="Model set to %s"
+MSG_MODEL_NONE="(default)"
+MSG_LANG_CURRENT="Current language: %s"
+MSG_LANG_SET="Language set to %s"
+MSG_SETTINGS_RESET="Reset to defaults"
+MSG_SETTINGS_RESET_DONE="Settings reset to defaults"
 
-# Load locale override
+# ── Config ───────────────────────────────────────────────────────────
+
+GWT_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/gwt"
+
+# Load locale (priority: GWT_LANG env > config file > LANG env)
 _load_locale() {
-    local lang="${GWT_LANG:-${LANG%%.*}}"
+    local lang="${GWT_LANG:-}"
+    if [[ -z "$lang" && -f "${GWT_CONFIG_DIR}/lang" ]]; then
+        lang="$(cat "${GWT_CONFIG_DIR}/lang")"
+    fi
+    if [[ -z "$lang" ]]; then
+        lang="${LANG%%.*}"
+    fi
     local script_dir
     script_dir="$(cd "$(dirname "$0")" && pwd)"
     local locale_file="${script_dir}/locale/${lang%%_*}.sh"
@@ -96,6 +123,33 @@ success() { printf "${GREEN}✓${NC} %s\n" "$1" >&2; }
 _gwt_cleanup() {
     tput cnorm >&2 2>/dev/null || true
 }
+
+_get_model() {
+    local model_file="${GWT_CONFIG_DIR}/model"
+    if [[ -f "$model_file" ]]; then
+        cat "$model_file"
+    fi
+}
+
+_set_model() {
+    mkdir -p "$GWT_CONFIG_DIR"
+    printf '%s' "$1" > "${GWT_CONFIG_DIR}/model"
+}
+
+_get_lang() {
+    if [[ -f "${GWT_CONFIG_DIR}/lang" ]]; then
+        cat "${GWT_CONFIG_DIR}/lang"
+    fi
+}
+
+_set_lang() {
+    mkdir -p "$GWT_CONFIG_DIR"
+    printf '%s' "$1" > "${GWT_CONFIG_DIR}/lang"
+}
+
+# Language codes and native names (used by setup wizard and cmd_lang)
+_LANG_CODES=("en" "ja" "fr" "es" "ru" "zh" "ar")
+_LANG_NAMES=("English" "日本語" "Français" "Español" "Русский" "中文" "العربية")
 
 require_git_repo() {
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -210,6 +264,51 @@ select_menu() {
     done
 }
 
+# ── first run setup ─────────────────────────────────────────────────
+
+_check_first_run() {
+    if [[ -f "${GWT_CONFIG_DIR}/lang" ]]; then
+        return 0
+    fi
+
+    # Language selection (native names are universally readable)
+    local items=()
+    local i=0
+    while [[ $i -lt ${#_LANG_CODES[@]} ]]; do
+        items+=("${_LANG_NAMES[$i]}")
+        i=$((i + 1))
+    done
+
+    local selected
+    selected=$(select_menu "Select language / 言語選択" "${items[@]}") || exit 0
+
+    local chosen_lang="${_LANG_CODES[$selected]}"
+    _set_lang "$chosen_lang"
+
+    # Reload locale with chosen language
+    GWT_LANG="$chosen_lang"
+    _load_locale
+
+    # Model selection (now in chosen language)
+    local model_ids=(
+        "claude-sonnet-4-6"
+        "claude-opus-4-6"
+        "claude-haiku-4-5-20251001"
+    )
+    local model_labels=(
+        "Sonnet 4.6  (claude-sonnet-4-6)"
+        "Opus 4.6    (claude-opus-4-6)"
+        "Haiku 4.5   (claude-haiku-4-5-20251001)"
+    )
+
+    local model_selected
+    model_selected=$(select_menu "$MSG_MODEL_SELECT" "${model_labels[@]}") || exit 0
+
+    _set_model "${model_ids[$model_selected]}"
+    success "$(printf "$MSG_MODEL_SET" "${model_ids[$model_selected]}")"
+    printf "\n" >&2
+}
+
 # ── generate_branch_name ────────────────────────────────────────────
 
 generate_branch_name() {
@@ -235,7 +334,13 @@ Implementation: ${description}"
 Feedback on previous suggestion: ${feedback}"
         fi
 
-        name="$(CLAUDECODE= claude -p "$prompt" 2>/dev/null || true)"
+        local model_args=()
+        local model
+        model="$(_get_model)"
+        if [[ -n "$model" ]]; then
+            model_args=(--model "$model")
+        fi
+        name="$(CLAUDECODE= claude "${model_args[@]}" -p "$prompt" 2>/dev/null || true)"
         name="$(echo "$name" | head -1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
     fi
 
@@ -330,7 +435,7 @@ cmd_create() {
     printf "  ${DIM}%s${NC} %s\n" "$MSG_PATH" "$wt_path" >&2
     printf "  ${DIM}%s${NC} %s\n" "$MSG_BRANCH" "$branch_name" >&2
     printf "\n" >&2
-    info "$MSG_TO_SWITCH ${BOLD}gwt switch${NC}"
+    printf "${CYAN}▸${NC} %s ${BOLD}gwt switch${NC}\n" "$MSG_TO_SWITCH" >&2
 }
 
 # ── list ─────────────────────────────────────────────────────────────
@@ -494,6 +599,105 @@ cmd_switch() {
     printf "%s" "$target_path" > "/tmp/.gwt_cd_target"
 }
 
+# ── settings ─────────────────────────────────────────────────────────
+
+_select_lang() {
+    local items=()
+    local current
+    current="$(_get_lang)"
+    local i=0
+    while [[ $i -lt ${#_LANG_CODES[@]} ]]; do
+        local label="${_LANG_NAMES[$i]}"
+        if [[ "${_LANG_CODES[$i]}" == "$current" ]]; then
+            label="${label} ★"
+        fi
+        items+=("$label")
+        i=$((i + 1))
+    done
+
+    local selected
+    selected=$(select_menu "$MSG_SETTINGS_LANG" "${items[@]}") || return 0
+
+    local new_lang="${_LANG_CODES[$selected]}"
+    _set_lang "$new_lang"
+    GWT_LANG="$new_lang"
+    _load_locale
+    success "$(printf "$MSG_LANG_SET" "${_LANG_NAMES[$selected]}")"
+}
+
+_select_model() {
+    local current
+    current="$(_get_model)"
+
+    local model_ids=(
+        "claude-sonnet-4-6"
+        "claude-opus-4-6"
+        "claude-haiku-4-5-20251001"
+    )
+    local model_labels=(
+        "Sonnet 4.6  (claude-sonnet-4-6)"
+        "Opus 4.6    (claude-opus-4-6)"
+        "Haiku 4.5   (claude-haiku-4-5-20251001)"
+    )
+
+    local items=()
+    local i=0
+    while [[ $i -lt ${#model_ids[@]} ]]; do
+        local label="${model_labels[$i]}"
+        if [[ "${model_ids[$i]}" == "$current" ]]; then
+            label="${label} ★"
+        fi
+        items+=("$label")
+        i=$((i + 1))
+    done
+
+    local selected
+    selected=$(select_menu "$MSG_MODEL_SELECT" "${items[@]}") || return 0
+
+    local new_model="${model_ids[$selected]}"
+    _set_model "$new_model"
+    success "$(printf "$MSG_MODEL_SET" "$new_model")"
+}
+
+_reset_settings() {
+    rm -f "${GWT_CONFIG_DIR}/lang" "${GWT_CONFIG_DIR}/model"
+    success "$MSG_SETTINGS_RESET_DONE"
+}
+
+cmd_settings() {
+    # Resolve current language display name
+    local current_lang
+    current_lang="$(_get_lang)"
+    local lang_display="$MSG_MODEL_NONE"
+    local i=0
+    while [[ $i -lt ${#_LANG_CODES[@]} ]]; do
+        if [[ "${_LANG_CODES[$i]}" == "$current_lang" ]]; then
+            lang_display="${_LANG_NAMES[$i]}"
+            break
+        fi
+        i=$((i + 1))
+    done
+
+    local current_model
+    current_model="$(_get_model)"
+    local model_display="${current_model:-$MSG_MODEL_NONE}"
+
+    local items=(
+        "$MSG_SETTINGS_LANG  ($lang_display)"
+        "$MSG_SETTINGS_MODEL  ($model_display)"
+        "$MSG_SETTINGS_RESET"
+    )
+
+    local selected
+    selected=$(select_menu "$MSG_SETTINGS_TITLE" "${items[@]}") || return 0
+
+    case "$selected" in
+        0) _select_lang ;;
+        1) _select_model ;;
+        2) _reset_settings ;;
+    esac
+}
+
 # ── help ─────────────────────────────────────────────────────────────
 
 cmd_help() {
@@ -510,6 +714,7 @@ ${BOLD}${MSG_HELP_COMMANDS}:${NC}
     ${GREEN}list${NC}    (l, ls)  ${MSG_HELP_LIST_DESC}
     ${GREEN}remove${NC}  (rm)     ${MSG_HELP_REMOVE_DESC}
     ${GREEN}switch${NC}  (s)      ${MSG_HELP_SWITCH_DESC}
+    ${GREEN}settings${NC}         ${MSG_HELP_SETTINGS_DESC}
     ${GREEN}help${NC}    (-h)     ${MSG_HELP_HELP_DESC}
 
 ${BOLD}${MSG_HELP_EXAMPLES}:${NC}
@@ -535,6 +740,7 @@ cmd_interactive() {
         "$MSG_MENU_LIST"
         "$MSG_MENU_REMOVE"
         "$MSG_MENU_SWITCH"
+        "$MSG_MENU_SETTINGS"
         "$MSG_MENU_HELP"
     )
     local selected
@@ -545,13 +751,16 @@ cmd_interactive() {
         1) cmd_list ;;
         2) cmd_remove ;;
         3) cmd_switch ;;
-        4) cmd_help ;;
+        4) cmd_settings ;;
+        5) cmd_help ;;
     esac
 }
 
 # ── Main ─────────────────────────────────────────────────────────────
 
 main() {
+    _check_first_run
+
     if [[ $# -eq 0 ]]; then
         cmd_interactive
         return
@@ -566,6 +775,7 @@ main() {
         list|l|ls)      cmd_list ;;
         remove|rm)      cmd_remove ;;
         switch|s)       cmd_switch ;;
+        settings)       cmd_settings ;;
         help|-h|--help) cmd_help ;;
         *)
             # Non-subcommand arguments treated as description for direct create

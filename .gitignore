@@ -1,1 +1,11 @@
+# Build artifacts
+/target/
+
+# Editor
+.vscode/
+
+# .claude settings
+CLAUDE.md
 .claude/
+.mcp.json
+.mcp.json.example

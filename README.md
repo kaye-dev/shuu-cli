@@ -1,6 +1,8 @@
-# gwt - Git Worktree Manager
+# shuu - Git Worktree Manager
 
-> v2.0.0
+[日本語](README.ja.md)
+
+> v0.0.1
 
 A CLI tool for interactively creating, switching, and removing git worktrees.
 Uses [Claude Code](https://github.com/anthropics/claude-code) for AI-powered branch name suggestions.
@@ -9,64 +11,92 @@ Uses [Claude Code](https://github.com/anthropics/claude-code) for AI-powered bra
 
 - **Arrow-key navigation** - Interactive menus with `↑↓`, `j/k` (vim), number keys, and `q` to cancel
 - **AI branch naming** - Describe what you want to implement, get a branch name suggested by Claude
-- **Direct create mode** - `gwt "implement auth"` skips the prompt and goes straight to branch selection
+- **Direct create mode** - `shuu "implement auth"` skips the prompt and goes straight to branch selection
 - **Multilingual** - 7 languages: English, Japanese, French, Spanish, Russian, Chinese, Arabic
+- **First-run setup** - Language and AI model selection on first launch
 
 ## Requirements
 
-- Bash 3.2+
 - Git
 - [Claude Code](https://github.com/anthropics/claude-code) (optional, for AI branch name suggestions)
 
 ## Installation
 
+### One-liner install (recommended)
+
 ```bash
-# 1. Copy the script to somewhere in your PATH
-cp gwt /usr/local/bin/gwt
-chmod +x /usr/local/bin/gwt
-
-# 2. Copy the locale directory alongside the script
-cp -r locale /usr/local/bin/locale
-
-# 3. Add the shell wrapper to your .zshrc (required for gwt switch to cd)
-echo 'source /path/to/gwt.zsh' >> ~/.zshrc
-source ~/.zshrc
+curl -fsSL https://raw.githubusercontent.com/kaye-dev/shuu-cli/main/install.sh | bash
 ```
 
-> **Note:** `gwt switch` uses a shell function to `cd` into the selected worktree. Without sourcing `gwt.zsh`, the directory change won't take effect in your current shell.
+Automatically detects your OS and architecture, downloads the latest release binary, and adds it to your PATH.
+
+You can also specify a version:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kaye-dev/shuu-cli/main/install.sh | bash -s v0.0.1
+```
+
+### Build from source
+
+Requires [Rust](https://www.rust-lang.org/tools/install) toolchain.
+
+```bash
+git clone https://github.com/kaye-dev/shuu-cli.git
+cd shuu-cli
+cargo build --release
+```
+
+The binary is output to `target/release/shuu`. Copy it to a directory in your PATH:
+
+```bash
+cp target/release/shuu ~/.local/bin/
+# or
+sudo cp target/release/shuu /usr/local/bin/
+```
+
+### cargo install
+
+```bash
+cargo install --git https://github.com/kaye-dev/shuu-cli.git
+```
+
+This installs the `shuu` binary to `~/.cargo/bin/` (already in PATH if Rust is set up).
 
 ## Commands
 
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `gwt create` | `c` | Create worktree (AI branch name suggestion) |
-| `gwt list` | `l`, `ls` | List worktrees |
-| `gwt switch` | `s` | Switch to worktree (interactive) |
-| `gwt remove` | `rm` | Remove worktree (interactive) |
-| `gwt help` | `-h` | Show help |
-
-Running `gwt` with no arguments opens the interactive menu.
+| `shuu` | | Interactive menu |
+| `shuu create` | `c` | Create worktree (AI branch name suggestion) |
+| `shuu list` | `l`, `ls` | List worktrees |
+| `shuu switch` | `s` | Switch to worktree (interactive) |
+| `shuu remove` | `rm` | Remove worktree (interactive) |
+| `shuu settings` | | Configure language and AI model |
+| `shuu help` | `-h` | Show help |
 
 ## Usage
 
 ```bash
 # Interactive menu (arrow keys to navigate)
-gwt
+shuu
 
 # Create a new worktree
-gwt create
+shuu create
 
 # Create directly from a description (skips the prompt)
-gwt "implement user authentication"
+shuu "implement user authentication"
 
 # List all worktrees
-gwt ls
+shuu ls
 
 # Switch to another worktree
-gwt s
+shuu s
 
 # Remove a worktree
-gwt rm
+shuu rm
+
+# Open settings
+shuu settings
 ```
 
 ### Keyboard shortcuts
@@ -79,7 +109,7 @@ All interactive menus support:
 | `↓` / `j` | Move down |
 | `1`-`9` | Jump to item |
 | `Enter` | Confirm selection |
-| `q` | Cancel |
+| `q` / `Esc` | Cancel |
 
 ### Create workflow
 
@@ -90,14 +120,10 @@ All interactive menus support:
 
 ## Language / Locale
 
-gwt defaults to English. Set `GWT_LANG` or use your system `LANG` to switch languages:
+shuu selects a language on first run. You can change it later via `shuu settings`, or override with `GWT_LANG`:
 
 ```bash
-# Use Japanese
-GWT_LANG=ja gwt
-
-# Or set it in your shell profile
-export GWT_LANG=ja
+GWT_LANG=ja shuu
 ```
 
 ### Supported languages
@@ -120,11 +146,11 @@ Worktrees are created at `../<repo-name>-worktrees/<branch>/`:
 parent/
 ├── my-project/              # Main worktree
 └── my-project-worktrees/
-    ├── feat-add-auth/       # Created by gwt
-    └── fix-login-bug/       # Created by gwt
+    ├── feat-add-auth/       # Created by shuu
+    └── fix-login-bug/       # Created by shuu
 ```
 
-When Claude Code is installed, `gwt create` sends your implementation description to Claude to suggest a branch name (kebab-case with `feat/`, `fix/`, `refactor/` prefixes). Without Claude Code, it auto-generates from the description text.
+When Claude Code is installed, `shuu create` sends your implementation description to Claude to suggest a branch name (kebab-case with `feat/`, `fix/`, `refactor/` prefixes). Without Claude Code, it auto-generates from the description text.
 
 ## License
 

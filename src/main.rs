@@ -15,7 +15,7 @@ pub const BOLD: &str = "\x1b[1m";
 pub const DIM: &str = "\x1b[2m";
 pub const NC: &str = "\x1b[0m";
 
-pub const VERSION: &str = "2.1.0";
+pub const VERSION: &str = "0.0.1";
 
 pub struct App {
     #[allow(dead_code)]

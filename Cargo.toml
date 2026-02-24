@@ -1,11 +1,14 @@
 [package]
 name = "shuu"
-version = "2.1.0"
+version = "0.0.1"
 edition = "2021"
 
 [dependencies]
 crossterm = "0.28"
 dirs = "5"
+
+[build-dependencies]
+serde_yaml = "0.9"
 
 [profile.release]
 strip = true

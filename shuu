@@ -218,16 +218,15 @@ select_menu() {
         local accept=0
         case "$key" in
             $'\x1b')
-                IFS= read -rsn1 -t 0.05 seq1 || seq1=""
-                if [[ -z "$seq1" ]]; then
+                IFS= read -rsn2 -t 1 seq || seq=""
+                if [[ -z "$seq" ]]; then
                     # ESC key alone - cancel
                     printf '\n' >&2
                     tput cnorm >&2 2>/dev/null || true
                     trap - INT TERM
                     return 1
                 fi
-                IFS= read -rsn1 -t 0.05 seq2 || seq2=""
-                case "${seq1}${seq2}" in
+                case "$seq" in
                     '[A') selected=$(( (selected - 1 + total) % total )) ;;
                     '[B') selected=$(( (selected + 1) % total )) ;;
                 esac
